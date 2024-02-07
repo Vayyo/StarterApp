@@ -1,10 +1,11 @@
 import { useRef, useState } from "react";
-import { StyleSheet, View } from "react-native";
+import { Platform, StyleSheet, View } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { captureRef } from "react-native-view-shot";
 import * as MediaLibrary from "expo-media-library";
 import * as ImagePicker from "expo-image-picker";
+import DomToImage from "dom-to-image";
 import ImageViewer from "./components/ImageViewer";
 import Button from "./components/Button";
 import IconButton from "./components/IconButton";
@@ -46,18 +47,35 @@ export default function App() {
   const onAddSticker = () => setIsModalVisible(true);
 
   const onSaveImageAsync = async () => {
-    try {
-      const localUri = await captureRef(imageRef, {
-        height: 440,
-        quality: 1,
-      });
+    if (Platform.OS !== "web") {
+      try {
+        const localUri = await captureRef(imageRef, {
+          height: 440,
+          quality: 1,
+        });
 
-      await MediaLibrary.saveToLibraryAsync(localUri);
-      if (localUri) {
-        alert("Image Saved");
+        await MediaLibrary.saveToLibraryAsync(localUri);
+        if (localUri) {
+          alert("Image Saved");
+        }
+      } catch (e) {
+        console.log(e);
       }
-    } catch (e) {
-      console.log(e)
+    } else {
+      try {
+        const dataURL = await DomToImage.toPng(imageRef.current, {
+          quality: 1,
+          width: 320,
+          height: 440,
+        });
+
+        const link = document.createElement("a");
+        link.download = "stickerEdit.png";
+        link.href = dataURL;
+        link.click();
+      } catch (e) {
+        console.log(e);
+      }
     }
   };
 
